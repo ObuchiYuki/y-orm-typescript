@@ -8,6 +8,8 @@ const it = <T>(value: T, block: (value: T) => void): T => {
     return value
 }
 
+type ConstMap<T> = { [P in keyof T]?: YPrimitive }
+
 export class BindingMap {
     public storage: Y.Map<YElement>
 
@@ -42,6 +44,30 @@ export class BindingMap {
             this._rootBindingMap = m
         })
     }
+
+    static constants<T extends BindableObject & object>(value: T, properties: ConstMap<T>): void
+    static constants<T extends BindableObject & object>(value: T, properties: () => ConstMap<T>): void
+
+    static constants<T extends BindableObject & object>(value: T, properties: ConstMap<T>|(() => ConstMap<T>)) {
+        let rprops: () => ConstMap<T>
+        if (typeof properties == "function") {
+            rprops = properties
+        } else {
+            rprops = () => properties
+        }
+
+        const map = value.map
+        let propertiesRetain: ConstMap<T>|undefined = undefined
+        
+        for (const key in properties) if (!map.has(key)) {
+            if (propertiesRetain == undefined) propertiesRetain = rprops()
+            map.set(key, propertiesRetain[key as keyof T])
+        }
+    }
+
+    has(key: string): boolean {
+        return this.storage.has(key) 
+    }
     
     set(key: string, value: YPrimitive|undefined) {
         if (value == null) {
@@ -51,15 +77,15 @@ export class BindingMap {
         }
     }
 
+    get(key: string): YElement | undefined { 
+        this._atom.reportObserved()
+        return this.storage.get(key) 
+    }
+
     clear() {
         this._bindableArrayMap.clear()
         this._bindableMap.clear()
         this.storage.clear()
-    }
-
-    get(key: string): YElement | undefined { 
-        this._atom.reportObserved()
-        return this.storage.get(key) 
     }
 
     getBoolean(key: string): boolean | undefined {

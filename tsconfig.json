@@ -1,5 +1,6 @@
 {
     "compilerOptions": {
+        "noErrorTruncation": true,
         "esModuleInterop": true,
         "target": "ES2016",
         "module": "CommonJS",

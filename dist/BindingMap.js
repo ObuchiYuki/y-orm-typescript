@@ -52,6 +52,26 @@ class BindingMap {
             this._rootBindingMap = m;
         });
     }
+    static constants(value, properties) {
+        let rprops;
+        if (typeof properties == "function") {
+            rprops = properties;
+        }
+        else {
+            rprops = () => properties;
+        }
+        const map = value.map;
+        let propertiesRetain = undefined;
+        for (const key in properties)
+            if (!map.has(key)) {
+                if (propertiesRetain == undefined)
+                    propertiesRetain = rprops();
+                map.set(key, propertiesRetain[key]);
+            }
+    }
+    has(key) {
+        return this.storage.has(key);
+    }
     set(key, value) {
         if (value == null) {
             this.storage.delete(key);
@@ -60,14 +80,14 @@ class BindingMap {
             this.storage.set(key, value);
         }
     }
+    get(key) {
+        this._atom.reportObserved();
+        return this.storage.get(key);
+    }
     clear() {
         this._bindableArrayMap.clear();
         this._bindableMap.clear();
         this.storage.clear();
-    }
-    get(key) {
-        this._atom.reportObserved();
-        return this.storage.get(key);
     }
     getBoolean(key) {
         const value = this.get(key);

@@ -1,7 +1,9 @@
 import * as Y from "yjs"
-import { autorun } from "mobx"
+import { v4 as uuid } from "uuid"
+import { autorun, makeObservable, observable } from "mobx"
 
 import { BindingMap } from "../src/BindingMap"
+import { YElement, YPrimitive } from "../src/Types"
 
 describe("BindingMap.ts", () => {
 
@@ -56,6 +58,25 @@ describe("BindingMap.ts", () => {
         })
         expect(store.todo).not.toBeUndefined()
         expect(store.todo?.title).toBe("Hello")
+        
+    });
+
+    test("定数のテスト", () => {
+        const todoID = "512-fjahsasuy"
+
+        class Todo {
+            get id() { return this.map.getString("id") ?? "" }
+
+            get title() { return this.map.getString("title") }
+            set title(value) { this.map.set("title", value) }
+
+            constructor(public map: BindingMap){
+                BindingMap.constants(this, { id: todoID })
+            }
+        }
+
+        const todo = root.takeBindable(Todo, "todo")
+        expect(todo.id).toBe(todoID)
         
     });
 

@@ -16,9 +16,11 @@
     "mobx": "^6.8.0",
     "ts-jest": "^29.0.5",
     "typescript": "^4.9.5",
+    "uuid": "^9.0.0",
     "yjs": "^13.5.48"
   },
   "devDependencies": {
-    "@types/node": "^18.14.6"
+    "@types/node": "^18.14.6",
+    "@types/uuid": "^9.0.1"
   }
 }
