@@ -72,6 +72,22 @@ class BindingArray {
             block(baseArray[i], i, this);
         }
     }
+    removeWhere(block) {
+        let i = 0;
+        const newStorage = [];
+        const newBindableMap = new Map();
+        for (const map of this.storage) {
+            const element = this._takeObject(map);
+            if (!block(element, i, this)) {
+                newStorage.push(map);
+                newBindableMap.set(map, element);
+            }
+            i++;
+        }
+        this._bindableMap = newBindableMap;
+        this.storage.delete(0, this.storage.length);
+        this.storage.push(newStorage);
+    }
     [Symbol.iterator]() {
         return this.toArray()[Symbol.iterator]();
     }

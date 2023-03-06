@@ -16,6 +16,7 @@ export declare class BindingArray<Element extends BindableObject> {
     toArray(): Element[];
     map<T>(block: (element: Element, index: number, array: BindingArray<Element>) => T): T[];
     forEach<T>(block: (element: Element, index: number, array: BindingArray<Element>) => void): void;
+    removeWhere(block: (element: Element, index: number, array: BindingArray<Element>) => boolean): void;
     [Symbol.iterator](): IterableIterator<Element>;
     private _takeObject;
     toString(): any[];

@@ -101,6 +101,24 @@ export class BindingArray<Element extends BindableObject> {
         }
     }
 
+    removeWhere(block: (element: Element, index: number, array: BindingArray<Element>) => boolean) {
+        let i = 0; 
+        const newStorage: YMap[] = []
+        const newBindableMap = new Map<YMap, Element>()
+        for (const map of this.storage) {
+            const element = this._takeObject(map)
+            if (!block(element, i, this)) {
+                newStorage.push(map)
+                newBindableMap.set(map, element)
+            }
+            i++ 
+        }
+
+        this._bindableMap = newBindableMap
+        this.storage.delete(0, this.storage.length)
+        this.storage.push(newStorage)
+    }
+
     [Symbol.iterator](): IterableIterator<Element> {
         return this.toArray()[Symbol.iterator]()
     }
