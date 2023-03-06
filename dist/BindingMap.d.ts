@@ -7,6 +7,7 @@ export declare class BindingMap {
     private _bindableMap;
     private _bindableArrayMap;
     private _atom;
+    private _deletedOnce;
     private constructor();
     has(key: string): boolean;
     clear(): void;

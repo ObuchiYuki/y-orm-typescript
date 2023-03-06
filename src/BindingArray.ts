@@ -3,6 +3,15 @@ import { autorun, computed, makeAutoObservable, IAtom, createAtom } from "mobx"
 import { YMap, BindableObject, BindableObjectType } from "./Types"
 import { BindingMap } from "./BindingMap"
 
+function deleted(map: BindingMap): boolean {
+    return (map as any)._deletedOnce
+}
+function setDeleted(map: BindingMap|undefined) {
+    if (map) {
+        (map as any)._deletedOnce = true
+    }
+}
+
 export class BindingArray<Element extends BindableObject> {
     public storage: Y.Array<YMap>
     public ElementType: BindableObjectType<Element>
@@ -24,6 +33,7 @@ export class BindingArray<Element extends BindableObject> {
 
     insert(index: number, values: Element[]) {
         console.assert(index < this.storage.length, "Index out of range")
+        console.assert(values.every(e => !deleted(e.map)), "Value must not be deleted once.")
 
         this.storage.insert(
             index, values.map(e => e.map.storage)
@@ -34,6 +44,8 @@ export class BindingArray<Element extends BindableObject> {
     }
 
     push(values: Element[]) {
+        console.assert(values.every(e => !deleted(e.map)), "Value must not be deleted once.")
+
         this.storage.push(
             values.map(e => e.map.storage)
         )
@@ -43,6 +55,8 @@ export class BindingArray<Element extends BindableObject> {
     }
 
     unshift(values: Element[]) {
+        console.assert(values.every(e => !deleted(e.map)), "Value must not be deleted once.")
+        
         this.storage.unshift(
             values.map(e => e.map.storage)
         )
@@ -56,6 +70,7 @@ export class BindingArray<Element extends BindableObject> {
 
         for (let i = start; i < start+rlength; i++) {
             const map = this.storage.get(i)
+            setDeleted(this._bindableMap.get(map)?.map)
             this._bindableMap.delete(map)
         }
 
@@ -63,6 +78,7 @@ export class BindingArray<Element extends BindableObject> {
     }
 
     clear() {
+        this.delete(0, this.length)
         this.storage.delete(0, this.storage.length)
         this._bindableMap.clear()
     }
@@ -93,7 +109,7 @@ export class BindingArray<Element extends BindableObject> {
         return newArray
     }
 
-    filter(block: (element: Element, index: number, array: BindingArray<Element>) => boolean) {
+    filter(block: (element: Element, index: number, array: BindingArray<Element>) => boolean): Element[] {
         const baseArray = this.toArray()
         const newArray: Element[] = []
 
@@ -113,34 +129,26 @@ export class BindingArray<Element extends BindableObject> {
         }
     }
 
-    assign(elements: Element[]) {
-        this.clear()
-
-        const newStorage: YMap[] = []
-        
-        for (const element of elements) {
-            newStorage.push(element.map.storage)
-            this._bindableMap.set(element.map.storage, element)
-        }
-        this.storage.push(newStorage)
-    }
-
     removeWhere(block: (element: Element, index: number, array: BindingArray<Element>) => boolean) {
-        let i = 0; 
-        const newStorage: YMap[] = []
-        const newBindableMap = new Map<YMap, Element>()
-        for (const map of this.storage) {
-            const element = this._takeObject(map)
-            if (!block(element, i, this)) {
-                newStorage.push(map)
-                newBindableMap.set(map, element)
-            }
-            i++ 
-        }
+        const oldArray = this.storage.toArray()
 
-        this._bindableMap = newBindableMap
-        this.storage.delete(0, this.storage.length)
-        this.storage.push(newStorage)
+        let removeElements: number[] = []
+        for (let i = 0; i < oldArray.length; i++) {
+            const map = oldArray[i];
+            const element = this._takeObject(map)
+            
+            if (block(element, i, this)) {
+                removeElements.push(i)
+            }
+        }
+        
+        removeElements = removeElements.reverse()
+
+        for (const i of removeElements) {
+            const map = this.storage.get(i)
+            this._bindableMap.delete(map)
+            this.storage.delete(i)
+        }
     }
 
     [Symbol.iterator](): IterableIterator<Element> {

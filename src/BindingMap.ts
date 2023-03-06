@@ -11,6 +11,7 @@ export class BindingMap {
     private _bindableMap = new Map<string, BindableObject>()
     private _bindableArrayMap = new Map<string, BindingArray<any>>()
     private _atom: IAtom
+    private _deletedOnce = false
 
     private constructor(storage: Y.Map<YElement>) {
         this.storage = storage

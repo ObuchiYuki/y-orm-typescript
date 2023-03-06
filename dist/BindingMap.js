@@ -31,6 +31,7 @@ class BindingMap {
     constructor(storage) {
         this._bindableMap = new Map();
         this._bindableArrayMap = new Map();
+        this._deletedOnce = false;
         this.storage = storage;
         const handler = () => atom.reportChanged();
         const atom = (0, mobx_1.createAtom)("BindingMap", () => this.storage.observe(handler), () => this.storage.unobserve(handler));

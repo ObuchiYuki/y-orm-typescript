@@ -3,6 +3,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BindingArray = void 0;
 const mobx_1 = require("mobx");
 const BindingMap_1 = require("./BindingMap");
+function deleted(map) {
+    return map._deletedOnce;
+}
+function setDeleted(map) {
+    if (map) {
+        map._deletedOnce = true;
+    }
+}
 class BindingArray {
     constructor(ElementType, storage) {
         this._bindableMap = new Map();
@@ -17,32 +25,38 @@ class BindingArray {
     }
     insert(index, values) {
         console.assert(index < this.storage.length, "Index out of range");
+        console.assert(values.every(e => !deleted(e.map)), "Value must not be deleted once.");
         this.storage.insert(index, values.map(e => e.map.storage));
         values.forEach(e => {
             this._bindableMap.set(e.map.storage, e);
         });
     }
     push(values) {
+        console.assert(values.every(e => !deleted(e.map)), "Value must not be deleted once.");
         this.storage.push(values.map(e => e.map.storage));
         values.forEach(e => {
             this._bindableMap.set(e.map.storage, e);
         });
     }
     unshift(values) {
+        console.assert(values.every(e => !deleted(e.map)), "Value must not be deleted once.");
         this.storage.unshift(values.map(e => e.map.storage));
         values.forEach(e => {
             this._bindableMap.set(e.map.storage, e);
         });
     }
     delete(start, length) {
+        var _a;
         const rlength = length !== null && length !== void 0 ? length : 1;
         for (let i = start; i < start + rlength; i++) {
             const map = this.storage.get(i);
+            setDeleted((_a = this._bindableMap.get(map)) === null || _a === void 0 ? void 0 : _a.map);
             this._bindableMap.delete(map);
         }
         this.storage.delete(start, length);
     }
     clear() {
+        this.delete(0, this.length);
         this.storage.delete(0, this.storage.length);
         this._bindableMap.clear();
     }
@@ -82,30 +96,22 @@ class BindingArray {
             block(baseArray[i], i, this);
         }
     }
-    assign(elements) {
-        this.clear();
-        const newStorage = [];
-        for (const element of elements) {
-            newStorage.push(element.map.storage);
-            this._bindableMap.set(element.map.storage, element);
-        }
-        this.storage.push(newStorage);
-    }
     removeWhere(block) {
-        let i = 0;
-        const newStorage = [];
-        const newBindableMap = new Map();
-        for (const map of this.storage) {
+        const oldArray = this.storage.toArray();
+        let removeElements = [];
+        for (let i = 0; i < oldArray.length; i++) {
+            const map = oldArray[i];
             const element = this._takeObject(map);
-            if (!block(element, i, this)) {
-                newStorage.push(map);
-                newBindableMap.set(map, element);
+            if (block(element, i, this)) {
+                removeElements.push(i);
             }
-            i++;
         }
-        this._bindableMap = newBindableMap;
-        this.storage.delete(0, this.storage.length);
-        this.storage.push(newStorage);
+        removeElements = removeElements.reverse();
+        for (const i of removeElements) {
+            const map = this.storage.get(i);
+            this._bindableMap.delete(map);
+            this.storage.delete(i);
+        }
     }
     [Symbol.iterator]() {
         return this.toArray()[Symbol.iterator]();
