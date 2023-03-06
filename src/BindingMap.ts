@@ -24,6 +24,12 @@ export class BindingMap {
     has(key: string): boolean {
         return this.storage.has(key) 
     }
+
+    clear() {
+        this._bindableArrayMap.clear()
+        this._bindableMap.clear()
+        this.storage.clear()
+    }
     
     set(key: string, value: YPrimitive|undefined) {
         if (value == null) {
@@ -32,12 +38,8 @@ export class BindingMap {
             this.storage.set(key, value)
         }
     }
-
-    setInitialValueToConst(key: string, value: YPrimitive) {
-        if (this.storage.has(key)) {
-            throw new Error("Setting initial value twice is not allowed.")
-        }
-
+    setConst(key: string, value: YPrimitive) {
+        if (this.storage.has(key)) { throw new Error("Setting initial value twice is not allowed.") }
         this.storage.set(key, value)        
     }
 
@@ -45,16 +47,19 @@ export class BindingMap {
         this._atom.reportObserved()
         return this.storage.get(key) 
     }
-
-    clear() {
-        this._bindableArrayMap.clear()
-        this._bindableMap.clear()
-        this.storage.clear()
+    getConst(key: string): YElement {
+        if (!this.storage.has(key)) { throw new Error("Const value should not be empty.") }
+        return this.storage.get(key)!
     }
 
     getBoolean(key: string): boolean | undefined {
         const value = this.get(key)
         if (value == null || typeof value != "boolean") return
+        return value
+    }
+    getConstBoolean(key: string): boolean {
+        const value = this.getConst(key)
+        if (value == null || typeof value != "boolean") throw new TypeError()
         return value
     }
 
@@ -63,10 +68,20 @@ export class BindingMap {
         if (value == null || typeof value != "number") return
         return value
     }
+    getConstNumber(key: string): number {
+        const value = this.getConst(key)
+        if (value == null || typeof value != "number") throw new TypeError()
+        return value
+    }
 
     getString(key: string): string | undefined {
         const value = this.get(key)
         if (value == null || typeof value != "string") return
+        return value
+    }
+    getConstString(key: string): string {
+        const value = this.get(key)
+        if (value == null || typeof value != "string") throw new TypeError()
         return value
     }
 
@@ -78,6 +93,11 @@ export class BindingMap {
             this._bindableMap.set(key, bindable)
             this.storage.set(key, bindable.map.storage)
         }
+    }
+    setConstBindable<T extends BindableObject>(key: string, bindable: T) {
+        if (this.storage.has(key)) { throw new Error("Setting initial value twice is not allowed.") }
+        this._bindableMap.set(key, bindable)
+        this.storage.set(key, bindable.map.storage)
     }
 
     getBindable<T extends BindableObject>(Type: BindableObjectType<T>, key: string): T | undefined {
@@ -97,6 +117,22 @@ export class BindingMap {
         }
 
         return undefined
+    }
+    getConstBindable<T extends BindableObject>(Type: BindableObjectType<T>, key: string): T {
+        const bindable = this._bindableMap.get(key)
+        const bindedMap = this.storage.get(key)
+
+        if (bindable == null && bindedMap instanceof Y.Map) { 
+            const bindable = new Type(new BindingMap(bindedMap))
+            this._bindableMap.set(key, bindable)
+            return bindable
+        }
+        
+        if (bindable instanceof Type && bindedMap != null) { 
+            return bindable 
+        }
+
+        throw new TypeError()
     }
 
     takeBindable<T extends BindableObject>(Type: BindableObjectType<T>, key: string): T {

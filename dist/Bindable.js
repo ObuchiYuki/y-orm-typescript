@@ -25,12 +25,35 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Bindable = void 0;
 const Y = __importStar(require("yjs"));
+const mobx_1 = require("mobx");
 const BindingMap_1 = require("./BindingMap");
+class __BindableMarks {
+    constructor(value) {
+        this.value = value;
+    }
+}
 class Bindable {
+    static mark(Type, marks) {
+        Type.$__bindable_marks = new __BindableMarks(marks);
+    }
     static make(Type, properties) {
         const empty = new BindingMap_1.BindingMap(new Y.Map());
         const bindable = new Type(empty);
-        Object.assign(bindable, properties);
+        const __bindableMarks = Type.$__bindable_marks;
+        if (__bindableMarks != null) {
+            const bindableMarks = __bindableMarks.value;
+            for (const key in bindableMarks) {
+                const value = bindableMarks[key];
+                if (value == "const") {
+                    if (properties == null || properties[key] == null) {
+                        throw new Error(`Proeprty for key '${key}' marked as const. You should provide initial value.`);
+                    }
+                }
+            }
+        }
+        (0, mobx_1.transaction)(() => {
+            Object.assign(bindable, properties);
+        });
         return bindable;
     }
     static getRoot(document, rootName = "$__root") {

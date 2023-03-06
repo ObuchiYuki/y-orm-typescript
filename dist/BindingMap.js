@@ -39,6 +39,11 @@ class BindingMap {
     has(key) {
         return this.storage.has(key);
     }
+    clear() {
+        this._bindableArrayMap.clear();
+        this._bindableMap.clear();
+        this.storage.clear();
+    }
     set(key, value) {
         if (value == null) {
             this.storage.delete(key);
@@ -47,7 +52,7 @@ class BindingMap {
             this.storage.set(key, value);
         }
     }
-    setInitialValueToConst(key, value) {
+    setConst(key, value) {
         if (this.storage.has(key)) {
             throw new Error("Setting initial value twice is not allowed.");
         }
@@ -57,15 +62,22 @@ class BindingMap {
         this._atom.reportObserved();
         return this.storage.get(key);
     }
-    clear() {
-        this._bindableArrayMap.clear();
-        this._bindableMap.clear();
-        this.storage.clear();
+    getConst(key) {
+        if (!this.storage.has(key)) {
+            throw new Error("Const value should not be empty.");
+        }
+        return this.storage.get(key);
     }
     getBoolean(key) {
         const value = this.get(key);
         if (value == null || typeof value != "boolean")
             return;
+        return value;
+    }
+    getConstBoolean(key) {
+        const value = this.getConst(key);
+        if (value == null || typeof value != "boolean")
+            throw new TypeError();
         return value;
     }
     getNumber(key) {
@@ -74,10 +86,22 @@ class BindingMap {
             return;
         return value;
     }
+    getConstNumber(key) {
+        const value = this.getConst(key);
+        if (value == null || typeof value != "number")
+            throw new TypeError();
+        return value;
+    }
     getString(key) {
         const value = this.get(key);
         if (value == null || typeof value != "string")
             return;
+        return value;
+    }
+    getConstString(key) {
+        const value = this.get(key);
+        if (value == null || typeof value != "string")
+            throw new TypeError();
         return value;
     }
     setBindable(key, bindable) {
@@ -89,6 +113,13 @@ class BindingMap {
             this._bindableMap.set(key, bindable);
             this.storage.set(key, bindable.map.storage);
         }
+    }
+    setConstBindable(key, bindable) {
+        if (this.storage.has(key)) {
+            throw new Error("Setting initial value twice is not allowed.");
+        }
+        this._bindableMap.set(key, bindable);
+        this.storage.set(key, bindable.map.storage);
     }
     getBindable(Type, key) {
         this._atom.reportObserved();
@@ -103,6 +134,19 @@ class BindingMap {
             return bindable;
         }
         return undefined;
+    }
+    getConstBindable(Type, key) {
+        const bindable = this._bindableMap.get(key);
+        const bindedMap = this.storage.get(key);
+        if (bindable == null && bindedMap instanceof Y.Map) {
+            const bindable = new Type(new BindingMap(bindedMap));
+            this._bindableMap.set(key, bindable);
+            return bindable;
+        }
+        if (bindable instanceof Type && bindedMap != null) {
+            return bindable;
+        }
+        throw new TypeError();
     }
     takeBindable(Type, key) {
         this._atom.reportObserved();

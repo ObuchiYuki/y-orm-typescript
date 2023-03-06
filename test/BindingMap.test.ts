@@ -66,14 +66,15 @@ describe("BindingMap.ts", () => {
         const todoID = "512-fjahsasuy"
 
         class Todo {
-            get id() { return this.map.getString("id") ?? "" }
-            set id(value) { this.map.setInitialValueToConst("id", value) }
+            get id() { return this.map.getConstString("id") }
+            set id(value) { this.map.setConst("id", value) }
 
             get title() { return this.map.getString("title") }
             set title(value) { this.map.set("title", value) }
 
-            constructor(public map: BindingMap){}
+            constructor(public map: BindingMap) {}
         }
+        Bindable.mark(Todo, { id: "const" })
 
         const todo = Bindable.make(Todo, {
             id: todoID
