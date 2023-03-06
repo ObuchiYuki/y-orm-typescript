@@ -108,7 +108,10 @@ export class BindingArray<Element extends BindableObject> {
     private _takeObject(map: YMap): Element {
         const cached = this._bindableMap.get(map)
         if (cached != null) { return cached }
-        const newValue = new this.ElementType(new BindingMap(map))
+
+        // to make BindingMap constructor private
+        const bindingMap = new (BindingMap as any)(map) as BindingMap
+        const newValue = new this.ElementType(bindingMap)
         this._bindableMap.set(map, newValue)
         return newValue
     }

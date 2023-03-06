@@ -12,12 +12,13 @@ export declare class BindingMap {
     private _atom;
     private static _rootBindingMap;
     static make<T extends BindableObject>(Type: BindableObjectType<T>, properties?: Partial<T>): T;
-    constructor(storage: Y.Map<YElement>);
+    private constructor();
     static getRoot(document: Y.Doc): BindingMap;
     static constants<T extends BindableObject & object>(value: T, properties: ConstMap<T>): void;
     static constants<T extends BindableObject & object>(value: T, properties: () => ConstMap<T>): void;
     has(key: string): boolean;
     set(key: string, value: YPrimitive | undefined): void;
+    setInitialValueToConst(key: string, value: YPrimitive): void;
     get(key: string): YElement | undefined;
     clear(): void;
     getBoolean(key: string): boolean | undefined;

@@ -80,6 +80,12 @@ class BindingMap {
             this.storage.set(key, value);
         }
     }
+    setInitialValueToConst(key, value) {
+        if (this.storage.has(key)) {
+            throw new Error("Setting initial value twice is not allowed.");
+        }
+        this.storage.set(key, value);
+    }
     get(key) {
         this._atom.reportObserved();
         return this.storage.get(key);

@@ -30,7 +30,7 @@ export class BindingMap {
         return bindable
     }
 
-    constructor(storage: Y.Map<YElement>) {
+    private constructor(storage: Y.Map<YElement>) {
         this.storage = storage
         const handler = () => atom.reportChanged()
         const atom = createAtom(
@@ -75,6 +75,14 @@ export class BindingMap {
         } else {
             this.storage.set(key, value)
         }
+    }
+
+    setInitialValueToConst(key: string, value: YPrimitive) {
+        if (this.storage.has(key)) {
+            throw new Error("Setting initial value twice is not allowed.")
+        }
+
+        this.storage.set(key, value)        
     }
 
     get(key: string): YElement | undefined { 

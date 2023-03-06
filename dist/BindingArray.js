@@ -80,7 +80,9 @@ class BindingArray {
         if (cached != null) {
             return cached;
         }
-        const newValue = new this.ElementType(new BindingMap_1.BindingMap(map));
+        // to make BindingMap constructor private
+        const bindingMap = new BindingMap_1.BindingMap(map);
+        const newValue = new this.ElementType(bindingMap);
         this._bindableMap.set(map, newValue);
         return newValue;
     }
