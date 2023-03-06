@@ -78,6 +78,7 @@ describe("BindingMap.ts", () => {
         const todo = Bindable.make(Todo, {
             id: todoID
         })
+        root.setBindable("todo", todo)
         expect(todo.id).toBe(todoID)
         
     });
