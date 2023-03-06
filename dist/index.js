@@ -1,18 +1,9 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-__exportStar(require("./BindingArray"), exports);
-__exportStar(require("./BindingMap"), exports);
+exports.Bindable = exports.BindingMap = exports.BindingArray = void 0;
+var BindingArray_1 = require("./BindingArray");
+Object.defineProperty(exports, "BindingArray", { enumerable: true, get: function () { return BindingArray_1.BindingArray; } });
+var BindingMap_1 = require("./BindingMap");
+Object.defineProperty(exports, "BindingMap", { enumerable: true, get: function () { return BindingMap_1.BindingMap; } });
+var Bindable_1 = require("./Bindable");
+Object.defineProperty(exports, "Bindable", { enumerable: true, get: function () { return Bindable_1.Bindable; } });

@@ -80,7 +80,6 @@ describe("BindingMap.ts", () => {
         })
         root.setBindable("todo", todo)
         expect(todo.id).toBe(todoID)
-        
     });
 
 })

@@ -2,7 +2,6 @@ import * as Y from "yjs"
 import { IAtom, createAtom } from "mobx"
 import { YElement, BindableObject, BindableObjectType, YPrimitive } from "./Types"
 import { BindingArray } from "./BindingArray"
-import { Bindable } from "./Bindable"
 
 export class BindingMap {
     public storage: Y.Map<YElement>
