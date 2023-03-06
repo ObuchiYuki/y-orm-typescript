@@ -84,7 +84,7 @@ export class BindingMap {
         return value
     }
     getConstString(key: string): string {
-        const value = this.get(key)
+        const value = this.getConst(key)
         if (value == null || typeof value != "string") {
             throw new TypeError(`Const string for key '${key}' is '${typeof value}' type.`)
         }
