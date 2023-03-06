@@ -93,12 +93,36 @@ export class BindingArray<Element extends BindableObject> {
         return newArray
     }
 
+    filter(block: (element: Element, index: number, array: BindingArray<Element>) => boolean) {
+        const baseArray = this.toArray()
+        const newArray: Element[] = []
+
+        for (let i = 0; i < baseArray.length; i++) {
+            if (block(baseArray[i], i, this)) {
+                newArray.push(baseArray[i])
+            }
+        }
+        return newArray
+    }
+
     forEach<T>(block: (element: Element, index: number, array: BindingArray<Element>) => void) {
         const baseArray = this.toArray()
         
         for (let i = 0; i < baseArray.length; i++) {
             block(baseArray[i], i, this)
         }
+    }
+
+    assign(elements: Element[]) {
+        this.clear()
+
+        const newStorage: YMap[] = []
+        
+        for (const element of elements) {
+            newStorage.push(element.map.storage)
+            this._bindableMap.set(element.map.storage, element)
+        }
+        this.storage.push(newStorage)
     }
 
     removeWhere(block: (element: Element, index: number, array: BindingArray<Element>) => boolean) {

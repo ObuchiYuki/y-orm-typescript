@@ -66,11 +66,30 @@ class BindingArray {
         }
         return newArray;
     }
+    filter(block) {
+        const baseArray = this.toArray();
+        const newArray = [];
+        for (let i = 0; i < baseArray.length; i++) {
+            if (block(baseArray[i], i, this)) {
+                newArray.push(baseArray[i]);
+            }
+        }
+        return newArray;
+    }
     forEach(block) {
         const baseArray = this.toArray();
         for (let i = 0; i < baseArray.length; i++) {
             block(baseArray[i], i, this);
         }
+    }
+    assign(elements) {
+        this.clear();
+        const newStorage = [];
+        for (const element of elements) {
+            newStorage.push(element.map.storage);
+            this._bindableMap.set(element.map.storage, element);
+        }
+        this.storage.push(newStorage);
     }
     removeWhere(block) {
         let i = 0;
