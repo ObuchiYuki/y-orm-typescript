@@ -59,7 +59,9 @@ export class BindingMap {
     }
     getConstBoolean(key: string): boolean {
         const value = this.getConst(key)
-        if (value == null || typeof value != "boolean") throw new TypeError()
+        if (value == null || typeof value != "boolean") {
+            throw new TypeError(`Const boolean for key '${key}' is '${typeof value}' type.`)
+        }
         return value
     }
 
@@ -70,7 +72,9 @@ export class BindingMap {
     }
     getConstNumber(key: string): number {
         const value = this.getConst(key)
-        if (value == null || typeof value != "number") throw new TypeError()
+        if (value == null || typeof value != "number") {
+            throw new TypeError(`Const number for key '${key}' is '${typeof value}' type.`)
+        }
         return value
     }
 
@@ -81,7 +85,9 @@ export class BindingMap {
     }
     getConstString(key: string): string {
         const value = this.get(key)
-        if (value == null || typeof value != "string") throw new TypeError()
+        if (value == null || typeof value != "string") {
+            throw new TypeError(`Const string for key '${key}' is '${typeof value}' type.`)
+        }
         return value
     }
 
