@@ -27,21 +27,24 @@ exports.BindingMap = void 0;
 const Y = __importStar(require("yjs"));
 const mobx_1 = require("mobx");
 const BindingArray_1 = require("./BindingArray");
+const it = (value, block) => {
+    block(value);
+    return value;
+};
 class BindingMap {
-    static getRoot(document) {
-        if (this._root != null)
-            return this._root;
-        const storage = new BindingMap(document.getMap(this.rootName));
-        this._root = storage;
-        return storage;
-    }
     constructor(map) {
-        this._objectMap = new Map();
-        this._arrayMap = new Map();
+        this._bindableMap = new Map();
+        this._bindableArrayMap = new Map();
         this.map = map;
         const handler = () => atom.reportChanged();
         const atom = (0, mobx_1.createAtom)("BindingMap", () => this.map.observe(handler), () => this.map.unobserve(handler));
         this._atom = atom;
+    }
+    static getRoot(document) {
+        var _a;
+        return (_a = this._rootBindingMap) !== null && _a !== void 0 ? _a : it(new BindingMap(document.getMap(this.rootName)), m => {
+            this._rootBindingMap = m;
+        });
     }
     set(key, value) {
         this.map.set(key, value);
@@ -68,63 +71,64 @@ class BindingMap {
             return;
         return value;
     }
-    setObject(key, object) {
-        if (object == null) {
-            this._objectMap.delete(key);
+    setBindable(key, bindable) {
+        if (bindable == null) {
+            this._bindableMap.delete(key);
             this.map.delete(key);
         }
         else {
-            this._objectMap.set(key, object);
-            this.map.set(key, object.storage.map);
+            this._bindableMap.set(key, bindable);
+            this.map.set(key, bindable.storage.map);
         }
     }
-    takeObject(Type, key, typeGuard = (value) => value instanceof Type) {
+    getBindable(Type, key) {
         this._atom.reportObserved();
-        if (this._objectMap.has(key)) { // if exists in objectMap return it
-            const value = this._objectMap.get(key);
-            if (typeGuard(value)) {
-                return value;
-            }
+        const bindable = this._bindableMap.get(key);
+        const bindedMap = this.map.get(key);
+        if (bindable == null && bindedMap instanceof Y.Map) {
+            const bindable = new Type(bindedMap);
+            this._bindableMap.set(key, bindable);
+            return bindable;
         }
-        let objectMap = this.map.get(key);
-        if (!(objectMap instanceof Y.Map)) {
-            const newObjectMap = new Y.Map();
-            objectMap = newObjectMap;
-            this.map.set(key, newObjectMap);
-        }
-        const value = new Type(objectMap);
-        this._objectMap.set(key, value);
-        return value;
-    }
-    getObject(Type, key, typeGuard = (value) => value instanceof Type) {
-        this._atom.reportObserved();
-        const value = this._objectMap.get(key);
-        const map = this.map.get(key);
-        if (value == null && map instanceof Y.Map) {
-            const value = new Type(map);
-            this._objectMap.set(key, value);
-            return value;
-        }
-        if (value != null && typeGuard(value)) {
-            return value;
+        if (bindable instanceof Type && bindedMap != null) {
+            return bindable;
         }
         return undefined;
     }
-    getArray(Type, key) {
+    takeBindable(Type, key) {
         this._atom.reportObserved();
-        const cached = this._arrayMap.get(key);
-        if (cached != null) {
-            return cached;
+        if (this._bindableMap.has(key)) {
+            const bindable = this._bindableMap.get(key);
+            if (bindable instanceof Type)
+                return bindable;
         }
-        let arrayValue = this.map.get(key);
-        if (arrayValue == null || !(arrayValue instanceof Y.Array)) {
-            arrayValue = new Y.Array();
-            this.map.set(key, arrayValue);
+        let bindedMap = this.map.get(key);
+        if (!(bindedMap instanceof Y.Map)) {
+            const newObjectMap = new Y.Map();
+            bindedMap = newObjectMap;
+            this.map.set(key, newObjectMap);
         }
-        const array = arrayValue;
-        const arrayStorage = new BindingArray_1.BindingArray(Type, array);
-        this._arrayMap.set(key, arrayStorage);
+        const bindable = new Type(bindedMap);
+        this._bindableMap.set(key, bindable);
+        return bindable;
+    }
+    // no element type check
+    takeBindableArray(Type, key) {
+        this._atom.reportObserved();
+        if (this._bindableArrayMap.has(key)) {
+            return this._bindableArrayMap.get(key);
+        }
+        let bindableArray = this.map.get(key);
+        if (!(bindableArray instanceof Y.Array)) {
+            bindableArray = new Y.Array();
+            this.map.set(key, bindableArray);
+        }
+        const arrayStorage = new BindingArray_1.BindingArray(Type, bindableArray);
+        this._bindableArrayMap.set(key, arrayStorage);
         return arrayStorage;
+    }
+    toString() {
+        return this.map.toJSON();
     }
 }
 exports.BindingMap = BindingMap;
