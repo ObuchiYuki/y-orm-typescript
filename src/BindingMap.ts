@@ -1,6 +1,6 @@
 import * as Y from "yjs"
 import { IAtom, createAtom } from "mobx"
-import { YElement, BindableObject, BindableObjectType } from "./Types"
+import { YElement, BindableObject, BindableObjectType, YPrimitive } from "./Types"
 import { BindingArray } from "./BindingArray"
 
 const it = <T>(value: T, block: (value: T) => void): T => {
@@ -9,7 +9,7 @@ const it = <T>(value: T, block: (value: T) => void): T => {
 }
 
 export class BindingMap {
-    public map: Y.Map<YElement>
+    public storage: Y.Map<YElement>
 
     public static rootName = "$_root"
 
@@ -19,11 +19,20 @@ export class BindingMap {
 
     private static _rootBindingMap: BindingMap|undefined
 
-    constructor(map: Y.Map<YElement>) {
-        this.map = map
+    static make<T extends BindableObject>(Type: BindableObjectType<T>, properties?: Partial<T>): T {
+        const empty = new BindingMap(new Y.Map())
+        const bindable = new Type(empty)
+
+        Object.assign(bindable, properties)
+        
+        return bindable
+    }
+
+    constructor(storage: Y.Map<YElement>) {
+        this.storage = storage
         const handler = () => atom.reportChanged()
         const atom = createAtom(
-            "BindingMap", () => this.map.observe(handler), () => this.map.unobserve(handler)
+            "BindingMap", () => this.storage.observe(handler), () => this.storage.unobserve(handler)
         )
         this._atom = atom
     }
@@ -34,13 +43,23 @@ export class BindingMap {
         })
     }
     
-    set(key: string, value: YElement) {
-        this.map.set(key, value)
+    set(key: string, value: YPrimitive|undefined) {
+        if (value == null) {
+            this.storage.delete(key)
+        } else {
+            this.storage.set(key, value)
+        }
+    }
+
+    clear() {
+        this._bindableArrayMap.clear()
+        this._bindableMap.clear()
+        this.storage.clear()
     }
 
     get(key: string): YElement | undefined { 
         this._atom.reportObserved()
-        return this.map.get(key) 
+        return this.storage.get(key) 
     }
 
     getBoolean(key: string): boolean | undefined {
@@ -64,21 +83,21 @@ export class BindingMap {
     setBindable<T extends BindableObject>(key: string, bindable: T | undefined) {
         if (bindable == null) {
             this._bindableMap.delete(key)
-            this.map.delete(key)
+            this.storage.delete(key)
         } else {
             this._bindableMap.set(key, bindable)
-            this.map.set(key, bindable.storage.map)
+            this.storage.set(key, bindable.map.storage)
         }
     }
 
-    getBindable<T extends BindableObject>(Type: { new(map: Y.Map<YElement>): T }, key: string): T | undefined {
+    getBindable<T extends BindableObject>(Type: BindableObjectType<T>, key: string): T | undefined {
         this._atom.reportObserved()
         
         const bindable = this._bindableMap.get(key)
-        const bindedMap = this.map.get(key)
+        const bindedMap = this.storage.get(key)
 
         if (bindable == null && bindedMap instanceof Y.Map) { 
-            const bindable = new Type(bindedMap)
+            const bindable = new Type(new BindingMap(bindedMap))
             this._bindableMap.set(key, bindable)
             return bindable
         }
@@ -90,7 +109,7 @@ export class BindingMap {
         return undefined
     }
 
-    takeBindable<T extends BindableObject>(Type: { new(map: Y.Map<YElement>): T }, key: string): T {
+    takeBindable<T extends BindableObject>(Type: BindableObjectType<T>, key: string): T {
         this._atom.reportObserved()
         
         if (this._bindableMap.has(key)) { 
@@ -98,14 +117,14 @@ export class BindingMap {
             if (bindable instanceof Type) return bindable
         }
 
-        let bindedMap = this.map.get(key) 
+        let bindedMap = this.storage.get(key) 
         if (!(bindedMap instanceof Y.Map)) {
-            const newObjectMap = new Y.Map()
+            const newObjectMap = new Y.Map<YElement>()
             bindedMap = newObjectMap
-            this.map.set(key, newObjectMap)
+            this.storage.set(key, newObjectMap)
         } 
     
-        const bindable = new Type(bindedMap as Y.Map<YElement>)
+        const bindable = new Type(new BindingMap(bindedMap as Y.Map<YElement>))
         this._bindableMap.set(key, bindable)
         return bindable
     }
@@ -118,10 +137,10 @@ export class BindingMap {
             return this._bindableArrayMap.get(key) as BindingArray<T>
         }
 
-        let bindableArray = this.map.get(key)
+        let bindableArray = this.storage.get(key)
         if (!(bindableArray instanceof Y.Array)) {
             bindableArray = new Y.Array()
-            this.map.set(key, bindableArray)
+            this.storage.set(key, bindableArray)
         }
 
         const arrayStorage = new BindingArray(Type, bindableArray as Y.Array<Y.Map<YElement>>)
@@ -130,6 +149,6 @@ export class BindingMap {
     }
 
     toString() {
-        return this.map.toJSON()
+        return this.storage.toJSON()
     }
 }

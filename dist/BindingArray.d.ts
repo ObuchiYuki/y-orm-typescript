@@ -1,11 +1,11 @@
 import * as Y from "yjs";
 import { YMap, BindableObject, BindableObjectType } from "./Types";
 export declare class BindingArray<Element extends BindableObject> {
-    array: Y.Array<YMap>;
+    storage: Y.Array<YMap>;
     ElementType: BindableObjectType<Element>;
     private _bindableMap;
     private _atom;
-    constructor(ElementType: BindableObjectType<Element>, array: Y.Array<YMap>);
+    constructor(ElementType: BindableObjectType<Element>, storage: Y.Array<YMap>);
     get length(): number;
     insert(index: number, values: Element[]): void;
     push(values: Element[]): void;

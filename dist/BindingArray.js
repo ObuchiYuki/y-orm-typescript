@@ -2,58 +2,59 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BindingArray = void 0;
 const mobx_1 = require("mobx");
+const BindingMap_1 = require("./BindingMap");
 class BindingArray {
-    constructor(ElementType, array) {
+    constructor(ElementType, storage) {
         this._bindableMap = new Map();
         this.ElementType = ElementType;
-        this.array = array;
+        this.storage = storage;
         const handler = () => atom.reportChanged();
-        const atom = (0, mobx_1.createAtom)("BindingArray", () => array.observe(handler), () => array.unobserve(handler));
+        const atom = (0, mobx_1.createAtom)("BindingArray", () => storage.observe(handler), () => storage.unobserve(handler));
         this._atom = atom;
     }
     get length() {
-        return this.array.length;
+        return this.storage.length;
     }
     insert(index, values) {
-        console.assert(index < this.array.length, "Index out of range");
-        this.array.insert(index, values.map(e => e.storage.map));
+        console.assert(index < this.storage.length, "Index out of range");
+        this.storage.insert(index, values.map(e => e.map.storage));
         values.forEach(e => {
-            this._bindableMap.set(e.storage.map, e);
+            this._bindableMap.set(e.map.storage, e);
         });
     }
     push(values) {
-        this.array.push(values.map(e => e.storage.map));
+        this.storage.push(values.map(e => e.map.storage));
         values.forEach(e => {
-            this._bindableMap.set(e.storage.map, e);
+            this._bindableMap.set(e.map.storage, e);
         });
     }
     unshift(values) {
-        this.array.unshift(values.map(e => e.storage.map));
+        this.storage.unshift(values.map(e => e.map.storage));
         values.forEach(e => {
-            this._bindableMap.set(e.storage.map, e);
+            this._bindableMap.set(e.map.storage, e);
         });
     }
     delete(start, length) {
         const rlength = length !== null && length !== void 0 ? length : 1;
         for (let i = start; i < start + rlength; i++) {
-            const map = this.array.get(i);
+            const map = this.storage.get(i);
             this._bindableMap.delete(map);
         }
-        this.array.delete(start, length);
+        this.storage.delete(start, length);
     }
     clear() {
-        this.array.delete(0, this.array.length);
+        this.storage.delete(0, this.storage.length);
         this._bindableMap.clear();
     }
     get(index) {
         this._atom.reportObserved();
-        console.assert(index < this.array.length, "Index out of range");
-        const map = this.array.get(index);
+        console.assert(index < this.storage.length, "Index out of range");
+        const map = this.storage.get(index);
         return this._takeObject(map);
     }
     toArray() {
         this._atom.reportObserved();
-        return this.array
+        return this.storage
             .toArray()
             .map(e => this._takeObject(e));
     }
@@ -79,12 +80,12 @@ class BindingArray {
         if (cached != null) {
             return cached;
         }
-        const newValue = new this.ElementType(map);
+        const newValue = new this.ElementType(new BindingMap_1.BindingMap(map));
         this._bindableMap.set(map, newValue);
         return newValue;
     }
     toString() {
-        return this.array.toJSON();
+        return this.storage.toJSON();
     }
 }
 exports.BindingArray = BindingArray;

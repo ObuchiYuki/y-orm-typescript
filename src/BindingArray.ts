@@ -1,52 +1,53 @@
 import * as Y from "yjs"
 import { autorun, computed, makeAutoObservable, IAtom, createAtom } from "mobx"
 import { YMap, BindableObject, BindableObjectType } from "./Types"
+import { BindingMap } from "./BindingMap"
 
 export class BindingArray<Element extends BindableObject> {
-    public array: Y.Array<YMap>
+    public storage: Y.Array<YMap>
     public ElementType: BindableObjectType<Element>
     
     private _bindableMap: Map<YMap, Element> = new Map()
     private _atom: IAtom
 
-    constructor(ElementType: BindableObjectType<Element>, array: Y.Array<YMap>) {
+    constructor(ElementType: BindableObjectType<Element>, storage: Y.Array<YMap>) {
         this.ElementType = ElementType
-        this.array = array
+        this.storage = storage
         const handler = () => atom.reportChanged()
-        const atom = createAtom("BindingArray", () => array.observe(handler), () => array.unobserve(handler))
+        const atom = createAtom("BindingArray", () => storage.observe(handler), () => storage.unobserve(handler))
         this._atom = atom
     }
 
     get length(): number {
-        return this.array.length
+        return this.storage.length
     }
 
     insert(index: number, values: Element[]) {
-        console.assert(index < this.array.length, "Index out of range")
+        console.assert(index < this.storage.length, "Index out of range")
 
-        this.array.insert(
-            index, values.map(e => e.storage.map)
+        this.storage.insert(
+            index, values.map(e => e.map.storage)
         )
         values.forEach(e => {
-            this._bindableMap.set(e.storage.map, e)
+            this._bindableMap.set(e.map.storage, e)
         })
     }
 
     push(values: Element[]) {
-        this.array.push(
-            values.map(e => e.storage.map)
+        this.storage.push(
+            values.map(e => e.map.storage)
         )
         values.forEach(e => {
-            this._bindableMap.set(e.storage.map, e)
+            this._bindableMap.set(e.map.storage, e)
         })
     }
 
     unshift(values: Element[]) {
-        this.array.unshift(
-            values.map(e => e.storage.map)
+        this.storage.unshift(
+            values.map(e => e.map.storage)
         )
         values.forEach(e => {
-            this._bindableMap.set(e.storage.map, e)
+            this._bindableMap.set(e.map.storage, e)
         })
     }
 
@@ -54,30 +55,30 @@ export class BindingArray<Element extends BindableObject> {
         const rlength = length ?? 1
 
         for (let i = start; i < start+rlength; i++) {
-            const map = this.array.get(i)
+            const map = this.storage.get(i)
             this._bindableMap.delete(map)
         }
 
-        this.array.delete(start, length)
+        this.storage.delete(start, length)
     }
 
     clear() {
-        this.array.delete(0, this.array.length)
+        this.storage.delete(0, this.storage.length)
         this._bindableMap.clear()
     }
 
     get(index: number): Element { 
         this._atom.reportObserved()
-        console.assert(index < this.array.length, "Index out of range")
+        console.assert(index < this.storage.length, "Index out of range")
 
-        const map = this.array.get(index)
+        const map = this.storage.get(index)
         return this._takeObject(map)
     }
 
     toArray(): Element[] {
         this._atom.reportObserved()
 
-        return this.array
+        return this.storage
             .toArray()
             .map(e => this._takeObject(e))
     }
@@ -107,12 +108,12 @@ export class BindingArray<Element extends BindableObject> {
     private _takeObject(map: YMap): Element {
         const cached = this._bindableMap.get(map)
         if (cached != null) { return cached }
-        const newValue = new this.ElementType(map)
+        const newValue = new this.ElementType(new BindingMap(map))
         this._bindableMap.set(map, newValue)
         return newValue
     }
 
     toString() {
-        return this.array.toJSON()
+        return this.storage.toJSON()
     }
 }
