@@ -27,17 +27,7 @@ exports.BindingMap = void 0;
 const Y = __importStar(require("yjs"));
 const mobx_1 = require("mobx");
 const BindingArray_1 = require("./BindingArray");
-const it = (value, block) => {
-    block(value);
-    return value;
-};
 class BindingMap {
-    static make(Type, properties) {
-        const empty = new BindingMap(new Y.Map());
-        const bindable = new Type(empty);
-        Object.assign(bindable, properties);
-        return bindable;
-    }
     constructor(storage) {
         this._bindableMap = new Map();
         this._bindableArrayMap = new Map();
@@ -45,29 +35,6 @@ class BindingMap {
         const handler = () => atom.reportChanged();
         const atom = (0, mobx_1.createAtom)("BindingMap", () => this.storage.observe(handler), () => this.storage.unobserve(handler));
         this._atom = atom;
-    }
-    static getRoot(document) {
-        var _a;
-        return (_a = this._rootBindingMap) !== null && _a !== void 0 ? _a : it(new BindingMap(document.getMap(this.rootName)), m => {
-            this._rootBindingMap = m;
-        });
-    }
-    static constants(value, properties) {
-        let rprops;
-        if (typeof properties == "function") {
-            rprops = properties;
-        }
-        else {
-            rprops = () => properties;
-        }
-        const map = value.map;
-        let propertiesRetain = undefined;
-        for (const key in properties)
-            if (!map.has(key)) {
-                if (propertiesRetain == undefined)
-                    propertiesRetain = rprops();
-                map.set(key, propertiesRetain[key]);
-            }
     }
     has(key) {
         return this.storage.has(key);

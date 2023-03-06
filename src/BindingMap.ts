@@ -2,13 +2,7 @@ import * as Y from "yjs"
 import { IAtom, createAtom } from "mobx"
 import { YElement, BindableObject, BindableObjectType, YPrimitive } from "./Types"
 import { BindingArray } from "./BindingArray"
-
-const it = <T>(value: T, block: (value: T) => void): T => {
-    block(value)
-    return value
-}
-
-type ConstMap<T> = { [P in keyof T]?: YPrimitive }
+import { Bindable } from "./Bindable"
 
 export class BindingMap {
     public storage: Y.Map<YElement>
@@ -19,17 +13,6 @@ export class BindingMap {
     private _bindableArrayMap = new Map<string, BindingArray<any>>()
     private _atom: IAtom
 
-    private static _rootBindingMap: BindingMap|undefined
-
-    static make<T extends BindableObject>(Type: BindableObjectType<T>, properties?: Partial<T>): T {
-        const empty = new BindingMap(new Y.Map())
-        const bindable = new Type(empty)
-
-        Object.assign(bindable, properties)
-        
-        return bindable
-    }
-
     private constructor(storage: Y.Map<YElement>) {
         this.storage = storage
         const handler = () => atom.reportChanged()
@@ -37,32 +20,6 @@ export class BindingMap {
             "BindingMap", () => this.storage.observe(handler), () => this.storage.unobserve(handler)
         )
         this._atom = atom
-    }
-
-    static getRoot(document: Y.Doc): BindingMap {
-        return this._rootBindingMap ?? it(new BindingMap(document.getMap(this.rootName)), m => {
-            this._rootBindingMap = m
-        })
-    }
-
-    static constants<T extends BindableObject & object>(value: T, properties: ConstMap<T>): void
-    static constants<T extends BindableObject & object>(value: T, properties: () => ConstMap<T>): void
-
-    static constants<T extends BindableObject & object>(value: T, properties: ConstMap<T>|(() => ConstMap<T>)) {
-        let rprops: () => ConstMap<T>
-        if (typeof properties == "function") {
-            rprops = properties
-        } else {
-            rprops = () => properties
-        }
-
-        const map = value.map
-        let propertiesRetain: ConstMap<T>|undefined = undefined
-        
-        for (const key in properties) if (!map.has(key)) {
-            if (propertiesRetain == undefined) propertiesRetain = rprops()
-            map.set(key, propertiesRetain[key as keyof T])
-        }
     }
 
     has(key: string): boolean {

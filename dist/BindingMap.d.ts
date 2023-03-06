@@ -1,21 +1,13 @@
 import * as Y from "yjs";
 import { YElement, BindableObject, BindableObjectType, YPrimitive } from "./Types";
 import { BindingArray } from "./BindingArray";
-type ConstMap<T> = {
-    [P in keyof T]?: YPrimitive;
-};
 export declare class BindingMap {
     storage: Y.Map<YElement>;
     static rootName: string;
     private _bindableMap;
     private _bindableArrayMap;
     private _atom;
-    private static _rootBindingMap;
-    static make<T extends BindableObject>(Type: BindableObjectType<T>, properties?: Partial<T>): T;
     private constructor();
-    static getRoot(document: Y.Doc): BindingMap;
-    static constants<T extends BindableObject & object>(value: T, properties: ConstMap<T>): void;
-    static constants<T extends BindableObject & object>(value: T, properties: () => ConstMap<T>): void;
     has(key: string): boolean;
     set(key: string, value: YPrimitive | undefined): void;
     setInitialValueToConst(key: string, value: YPrimitive): void;
@@ -32,4 +24,3 @@ export declare class BindingMap {
         [x: string]: any;
     };
 }
-export {};

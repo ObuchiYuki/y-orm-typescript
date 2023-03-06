@@ -3,12 +3,13 @@ import { v4 as uuid } from "uuid"
 import { autorun, makeObservable, observable } from "mobx"
 
 import { BindingMap } from "../src/BindingMap"
+import { Bindable } from "../src/Bindable"
 import { YElement, YPrimitive } from "../src/Types"
 
 describe("BindingMap.ts", () => {
 
     const document = new Y.Doc()
-    const root = BindingMap.getRoot(document)
+    const root = Bindable.getRoot(document)
     afterEach(() => { root.clear() })
         
     test("autorunが適切に実行されるか", () => {
@@ -53,7 +54,7 @@ describe("BindingMap.ts", () => {
         const store = root.takeBindable(TodoStore, "store")
         expect(store.todo).toBeUndefined()
 
-        store.todo = BindingMap.make(Todo, {
+        store.todo = Bindable.make(Todo, {
             title: "Hello"
         })
         expect(store.todo).not.toBeUndefined()
@@ -66,16 +67,17 @@ describe("BindingMap.ts", () => {
 
         class Todo {
             get id() { return this.map.getString("id") ?? "" }
+            set id(value) { this.map.setInitialValueToConst("id", value) }
 
             get title() { return this.map.getString("title") }
             set title(value) { this.map.set("title", value) }
 
-            constructor(public map: BindingMap){
-                BindingMap.constants(this, { id: todoID })
-            }
+            constructor(public map: BindingMap){}
         }
 
-        const todo = root.takeBindable(Todo, "todo")
+        const todo = Bindable.make(Todo, {
+            id: todoID
+        })
         expect(todo.id).toBe(todoID)
         
     });
